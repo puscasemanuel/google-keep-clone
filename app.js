@@ -1,6 +1,9 @@
 class App {
     constructor() {
         this.notes = [];
+        this.title = '';
+        this.text = '';
+        this.id = '';
 
         this.$placeholder = document.querySelector('#placeholder');
         this.$form = document.querySelector('#form');
@@ -9,12 +12,18 @@ class App {
         this.$noteText = document.querySelector('#note-text')
         this.$formButtons = document.querySelector('#form-buttons')
         this.$closeButton = document.querySelector('#form-close-button')
+        this.$modal = document.querySelector('.modal');
+        this.$modalTitle = document.querySelector('.modal-title');
+        this.$modalText = document.querySelector('.modal-text');
+        this.$modalCloseButton = document.querySelector('.modal-close-button');
         this.addEventListeners();
     }
 
     addEventListeners(){
         document.body.addEventListener('click', event => {
             this.handleFormClick(event);
+            this.selectNote(event);
+            this.openModal(event);
         })
 
         this.$form.addEventListener('submit', event => {
@@ -30,6 +39,10 @@ class App {
         this.$closeButton.addEventListener('click', event => {
             event.stopPropagation(); //bubble event stop. 
             this.closeForm();
+        })
+
+        this.$modalCloseButton.addEventListener('click', event => {
+            this.closeModal(event);
         })
     }
 
@@ -63,6 +76,19 @@ class App {
         this.$noteText.value = '';
     }
 
+    openModal(event){
+        if(event.target.closest('.note')){
+            this.$modal.classList.toggle('open-modal');
+            this.$modalTitle.value = this.title;
+            this.$modalText.value = this.text;
+        }
+    }
+
+    closeModal(event){
+        this.editNote()
+        this.$modal.classList.toggle('open-modal');
+    }
+
     addNote(note){
         const newNote = {
             title: note.title,
@@ -71,10 +97,28 @@ class App {
             id: this.notes.length > 0 ? this.notes[this.notes.length - 1].id + 1 : 1
         }
 
+
         this.notes = [...this.notes, newNote]
         this.displayNotes();
         this.closeForm();
-        
+    }
+
+    editNote(){
+        const title = this.$modalTitle.value;
+        const text = this.$modalText.value;
+        this.notes = this.notes.map(note => 
+            note.id === Number(this.id) ? { ...note, title, text } : note
+          );
+        this.displayNotes();
+    }
+
+    selectNote(event){
+       const $selectedNote  = event.target.closest('.note');
+       if(!$selectedNote) return;
+       const [$noteTitle, $noteText] = $selectedNote.children;
+       this.title = $noteTitle.innerText;
+       this.text = $noteText.innerText;
+       this.id = $selectedNote.dataset.id;
     }
 
     displayNotes(){
@@ -82,7 +126,7 @@ class App {
        this.$placeholder.style.display = hasNotes ? 'none' : 'flex';
 
        this.$notes.innerHTML = this.notes.map(note => `
-        <div style="background: ${note.color};" class="note">
+       <div style="background: ${note.color};" class="note" data-id="${note.id}">
           <div class="${note.title && 'note-title'}">${note.title}</div>
           <div class="note-text">${note.text}</div>
           <div class="toolbar-container">
